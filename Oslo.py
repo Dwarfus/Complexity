@@ -125,10 +125,33 @@ class Oslo:
             self.relaxation()
             self.run+=1
 
-        self.heighplot()    
+        #self.heighplot()    
         #self.heights()
         #self.avalancheplot()
         
         
 a=Oslo(8,(1,2),0.2,1000)
+results1 = a.heights
+legend1= "L=8, p=0.2"
+a=Oslo(8,(1,2),0.4,1000)
+results2 = a.heights
+legend2= "L=8, p=0.4"
+a=Oslo(8,(1,2),0.6,1000)
+results3 = a.heights
+legend3= "L=8, p=0.6"
+a=Oslo(8,(1,2),0.8,1000)
+results4 = a.heights
+legend4= "L=8, p=0.8"
+
+
+scale = list(range(1, 1001))
+plot1 = plt.plot(scale, results1, label = legend1)
+plot2 = plt.plot(scale, results2, label = legend2)
+plot3 = plt.plot(scale, results3, label = legend3 )
+plot4 = plt.plot(scale, results4, label = legend4)
+plt.xlabel("Grains added")
+plt.ylabel("Height of the system")
+plt.legend(loc = "lower right")
+#plt.figlegend((plot1, plot2, plot3, plot4),(legend1,legend2,legend3,legend4), 'upper right')
+plt.show()
 
