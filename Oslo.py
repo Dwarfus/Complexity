@@ -7,6 +7,7 @@ CN project
 """
 # 2,4,8,16,32,64,128,256,512,1024,2048,4096
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Oslo:
     def __init__(self, L=256, treshold = (1,2), prob=0.5, nruns = 50):
@@ -15,8 +16,10 @@ class Oslo:
         self.height = np.zeros(L)
         self.firsth = 0
         self.nruns = nruns
-        self.s = np.zeros((nruns)) # avalanche size
+        self.s = [] # avalanche size
         self.counter = 0 # used to measure the time in units of total grains added. It will be useful when assesing the steady state
+        self.lost = 0
+        self.steady = 0 # check whether we are in steady state
         self.treshold = treshold
         self.L = L
         self.p = prob
@@ -34,8 +37,9 @@ class Oslo:
         """
         self.z[0]+=1
         self.firsth +=1
-        print "added"
+       # print ("added")
         self.avalanche=0
+        self.counter +=1
         
         
     def relaxation(self):
@@ -63,6 +67,7 @@ class Oslo:
             elif integ ==self.L-1:
                 self.z[integ]-=1
                 self.z[integ-1]+=1
+                self.lost +=1
                 
             self.ztres[integ] = np.random.choice(self.treshold, p=(self.p,1-self.p))
             #print "topple"
@@ -75,10 +80,21 @@ class Oslo:
         #if self.toppling[0].size>0:
             self.relaxation()
         else:
-            self.s[self.run] = self.avalanche
-            print self.z, self.firsth
-            print self.avalanche
-            
+            if self.steady ==1:
+                self.s.append(self.avalanche)
+           # print (self.z, self.firsth)
+            #print (self.avalanche)
+            if self.counter==100:
+                if self.lost>90 and self.lost<110:
+                    self.steady =1
+                    print("steady state has been reached", self.lost, self.counter)
+                else:
+                    print ("no steady state yet", self.lost, self.counter)
+                self.counter = 0
+                self.lost = 0
+                
+                
+                
     def heights(self):
         """
         This method calculates the heights from the value of self.firsth and the self.z        
@@ -90,18 +106,27 @@ class Oslo:
             helpH -=self.z[i]            
             i+=1
             
-            
-        
+
+    def plot(self):
+        length = len(a.s)+1
+        scale = list(range(1, length))
+        plt.stem(scale, a.s)   
+        plt.show()
         
     def call(self):
         self.run=0
+        self.steadyrun = 0
         while self.run<self.nruns:     
             self.drive()
             self.relaxation()
             self.run+=1
+
             
         self.heights()
+        self.plot()
         
         
-a=Oslo(16,(1,2),0,200)
+a=Oslo(16,(1,2),0.5,1000)
+
+
 
