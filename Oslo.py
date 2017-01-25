@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Jan 18 10:05:38 2017
-
 @author: pk3014
 CN project
 """
@@ -15,7 +14,7 @@ class Oslo:
         self.ztres = np.ones((L)) # The treshold values for each point
 
         self.firsth = 0 # THis keeps the height of the first instance
-        self.heights = []
+        self.heights = [0]
         self.nruns = nruns # This is the number of times the code should run
         self.s = [] # avalanche size for each grain added
         self.counter = 0 # used to measure the time in units of total grains added. 
@@ -41,6 +40,7 @@ class Oslo:
        # print ("added")
         self.avalanche=0
         self.counter +=1
+        self.relax=1
         
         
     def relaxation(self):
@@ -50,44 +50,48 @@ class Oslo:
         to topple even though it was previously stable.
         It is important to run the relaxation as long as there is something to relax
         """
-        self.toppling = 0
-        self.toppling = np.where(self.z>self.ztres)
         
-        if self.toppling[0].size>0: # checking if there is something to relax
-            integ = self.toppling[0][0]
-            if integ==0:
-                self.z[0]-=2
-                self.z[1]+=1
-                self.firsth-=1
+        while self.relax==1:        
+            self.toppling = 0
+            self.toppling = np.where(self.z>self.ztres)
+        
+            if self.toppling[0].size>0: # checking if there is something to relax
+                integ = self.toppling[0][0]
+                if integ==0:
+                    self.z[0]-=2
+                    self.z[1]+=1
+                    self.firsth-=1
                 
-            elif integ>0 and integ<self.L-1:
-                self.z[integ]-=2
-                self.z[integ-1]+=1
-                self.z[integ+1]+=1
+                elif integ>0 and integ<self.L-1:
+                    self.z[integ]-=2
+                    self.z[integ-1]+=1
+                    self.z[integ+1]+=1
                 
-            elif integ ==self.L-1:
-                self.z[integ]-=1
-                self.z[integ-1]+=1
-                self.lost +=1
+                elif integ ==self.L-1:
+                    self.z[integ]-=1
+                    self.z[integ-1]+=1
+                    self.lost +=1
                 
-            self.ztres[integ] = np.random.choice(self.treshold, p=(self.p,1-self.p))
-            #print "topple"
-            self.avalanche+=1
+                self.ztres[integ] = np.random.choice(self.treshold, p=(self.p,1-self.p))
+                #print "topple"
+                self.avalanche+=1
                 
         #print self.z  
         #print self.ztres
         #self.toppling = 0
         #self.toppling = np.where(self.z>self.ztres)        
         #if self.toppling[0].size>0:
-            self.relaxation()
-        else:
+
+                #self.relaxation()
+            else:
             
-            self.s.append(self.avalanche)
-            self.heights.append(self.firsth)
+                self.s.append(self.avalanche)
+                self.heights.append(self.firsth)
+                self.relax = 0
            # print (self.z, self.firsth)
             #print (self.avalanche)
            
-
+         
                 
     """                
     def heights(self):
@@ -129,29 +133,105 @@ class Oslo:
         #self.heights()
         #self.avalancheplot()
         
+
+
+class Results:
+    def __init__(self, L=[], nruns=[], steady=[]):
+        self.L = L
+        self.nruns = nruns
+        self.steady = steady
+        self.difruns = len(self.L)
+        self.results = np.array([0.0]*self.difruns)
         
-a=Oslo(8,(1,2),0.2,1000)
+        
+    
+    
+    def call2(self):
+        i=0
+        while(i<self.difruns):
+            a.Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
+            res1=a.heights
+            legend1=("L= %i", self.L[i])
+            rs1=np.mean(res1[self.steady[i]:])
+            pos1 = np.where(res1>rs1)
+            print(rs1, pos1[0][0])
+            scale = list(range(0,self.nruns[i]+1))
+            plt.plot(scale, res1, label=legend1)
+            
+            i+=1
+        
+        
+a=Oslo(8,(1,2),0.5,65000)
 results1 = a.heights
-legend1= "L=8, p=0.2"
-a=Oslo(8,(1,2),0.4,1000)
+legend1= ("L=8")
+rs1=np.mean(results1[200:])
+pos1 = np.where(results1>rs1)
+print(rs1, pos1[0][0])
+
+a=Oslo(16,(1,2),0.5,65000)
 results2 = a.heights
-legend2= "L=8, p=0.4"
-a=Oslo(8,(1,2),0.6,1000)
+legend2= "L=16"
+rs2=np.mean(results2[300:])
+pos2 = np.where(results2>rs2)
+print(rs2, pos2[0][0])
+
+a=Oslo(32,(1,2),0.5,65000)
 results3 = a.heights
-legend3= "L=8, p=0.6"
-a=Oslo(8,(1,2),0.8,1000)
+legend3= "L=32"
+rs3=np.mean(results3[1000:])
+pos3 = np.where(results3>rs3)
+print(rs3, pos3[0][0])
+
+
+a=Oslo(64,(1,2),0.5,65000)
 results4 = a.heights
-legend4= "L=8, p=0.8"
+legend4= "L=64"
+rs4=np.mean(results4[4000:])
+pos4 = np.where(results4>rs4)
+print(rs4, pos4[0][0])
+
+a=Oslo(128,(1,2),0.5,65000)
+results5 = a.heights
+legend5= "L=128"
+rs5=np.mean(results5[40000:])
+pos5 = np.where(results5>rs5)
+print(rs5, pos5[0][0])
+
+a=Oslo(256,(1,2),0.5,65000)
+results6 = a.heights
+legend6= "L=256"
+rs6=np.mean(results6[58000:])
+pos6 = np.where(results6>rs6)
+print(rs6, pos6[0][0])
 
 
-scale = list(range(1, 1001))
+
+
+scale = list(range(0, 65001))
 plot1 = plt.plot(scale, results1, label = legend1)
 plot2 = plt.plot(scale, results2, label = legend2)
 plot3 = plt.plot(scale, results3, label = legend3 )
 plot4 = plt.plot(scale, results4, label = legend4)
+plot5 = plt.plot(scale, results5, label = legend5)
+plot6 = plt.plot(scale, results6, label = legend6)
 plt.xlabel("Grains added")
 plt.ylabel("Height of the system")
-plt.legend(loc = "lower right")
+plt.legend(loc = 'upper left')
 #plt.figlegend((plot1, plot2, plot3, plot4),(legend1,legend2,legend3,legend4), 'upper right')
-plt.show()
+plt.axhline(y=rs1)
+plt.axhline(y=rs2)
+plt.axhline(y=rs3)
+plt.axhline(y=rs4)
+plt.axhline(y=rs5)
+plt.axhline(y=rs5)
+plt.axhline(y=rs6)
+plt.axvline(x=pos1[0][0])
+plt.axvline(x=pos2[0][0])
+plt.axvline(x=pos3[0][0])
+plt.axvline(x=pos4[0][0])
+plt.axvline(x=pos5[0][0])
+plt.axvline(x=pos6[0][0])
 
+
+
+plt.show()
