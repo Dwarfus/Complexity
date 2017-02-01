@@ -76,21 +76,13 @@ class Oslo:
                 #print "topple"
                 self.avalanche+=1
                 
-        #print self.z  
-        #print self.ztres
-        #self.toppling = 0
-        #self.toppling = np.where(self.z>self.ztres)        
-        #if self.toppling[0].size>0:
 
-                #self.relaxation()
             else:
             
                 self.s.append(self.avalanche)
                 self.heights.append(self.firsth)
                 self.relax = 0
-           # print (self.z, self.firsth)
-            #print (self.avalanche)
-           
+          
          
                 
                     
@@ -116,19 +108,9 @@ class Oslo:
         print(self.averageh, self.sqaverageh, T, self.sigma)"""
                     
 
-    def avalancheplot(self):
-        length = len(self.s)+1
-        scale = list(range(1, length))
-        plt.stem(scale, self.s)   
-        plt.show()
+
         
-    def heighplot(self):
-        scale = list(range(1, len(self.heights)+1))
-        plot1 = plt.plot(scale, self.heights)
-        plt.xlabel("Grains added")
-        plt.ylabel("Height of the system")
-        plt.figlegend(plot1,('label1',), 'upper right')
-        plt.show()
+
         
         
     def call(self):
@@ -148,19 +130,26 @@ class Oslo:
 
 class Results:
     def __init__(self, L=[], nruns=[], steady=[]):
+        """
+        This class contains the different function used to call the Oslo.
+        Each method then calculates whatever it needs.         
+        """
         self.L = L
         self.nruns = nruns
         self.steady = steady
         self.difruns = len(self.L)
         self.results = np.array([0.0]*self.difruns)
         
-        self.call2c()
+        self.call2b()
         
         
     
     
     def call2(self):
-        """This is used to call for task 2a"""
+        """This is used to call for task 2a
+        finds the value of steady state height and 
+        the first occurance of that value.
+        It plots the height vs t and highlight the above point"""
         i=0
         while(i<self.difruns):
             a = Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
@@ -173,42 +162,62 @@ class Results:
             plt.plot(scale, res1, label=legend1)
             plt.axhline(y=rs1)
             plt.axvline(x=pos1[0][0])
-           # print("L = %i, htres=%i, at ttres=%i", %(self.L[i],rs1, pos1 ))
+
             i+=1
             
         plt.xlabel("Grains added")
         plt.ylabel("Height of the system")
         plt.legend(loc = 'upper left')
         plt.show()
+
+
         
     def call2b(self):
         """This is used to call for task 2b
         Implementing data collaps"""
         i=0
+        self.w=25
         plt.figure(1)
         plt.title("Data collapse for moving average")
         while(i<self.difruns):
             a = Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
-            l = self.L[i]
-            res1=[a.moh[0]/l]            
+            l = float(self.L[i])
+            self.heights= a.heights
+            j = 0
+            leng = len(self.heights)-2*self.w
+            self.moh = np.zeros((1, leng))
+            while j<(leng):
+                self.moh[0][j]= np.mean(self.heights[j:j+2*self.w+1])
+                j+=1
+                
+                
+            
+            self.res = [float(y/l) for y in self.moh[0]]
             legend1=("L= %i" %self.L[i])
-            scale = list(range(0,len(res1[0])))
-            
-            scale = [float(x) for x in scale]
-            scale = [float(x/(l**2)) for x in scale]
-            #print(scale)
-            #print(res1[0], scale)
-            
-            plt.plot(np.log10(scale), np.log10(res1[0]), label=legend1)
+            self.scale1 = list(range(self.w,leng+self.w))                        
+            self.scale = [float(x) for x in self.scale1]
+            self.scale = [float(x/(l**2)) for x in self.scale]            
+            plt.loglog(self.scale, self.res,  label=legend1)
 
             i+=1
-            
-        plt.xlabel("log(t(grains)/(L**2))")
-        plt.ylabel("log(Moving average/L)")
+        # Now for the highest L I will calculate the gradient
+        self.scafit= self.scale[int(self.steady[-1]*0.1):int(self.steady[-1]*0.8)]
+        self.p = np.polyfit(np.log10(self.scafit),np.log10(self.res[int(self.steady[-1]*0.1):int(self.steady[-1]*0.8)]),deg=1 )
+        print(self.p)
+        # Plotting the linear fit - works          
+        self.values =[ z**self.p[0]*10**(self.p[1]) for z in self.scafit]
+        plt.loglog(self.scafit, self.values, label="line of best fit")
+        plt.xlabel("log10(t/(L**2))")
+        plt.ylabel("log10(Moving average/L)")
         plt.legend(loc = 0)
         plt.show()
         
-    def function(self, y,)
+  
+        
+        
+        
+    def function( L,a,c,w ):
+        return a+c(L**(-w))
 
     def call2c(self):
         i=0
@@ -261,70 +270,9 @@ class Results:
         self.sigma = np.sqrt(self.sqaverageh-self.averageh**2) 
         print(self.averageh, self.sqaverageh, T, self.sigma)"""
         
-        
-#b=Results(L=[16], nruns=[5000], steady=[350])  
-b=Results(L=[8,16,32,64], nruns=[5000,5000, 5000,7000], steady=[200,300,1000, 4750]) 
+
+#tresholds in time are[54,226,898,3391,14056,56437]        
+b=Results(L=[32], nruns=[6000], steady=[900])  
+#b=Results(L=[8,16,32,64,128], nruns=[5100,5300, 5900,8400,20000], steady=[100,300,900, 3400,15000]) 
 #b=Results(L=[8,16,32,64,128,256,512], nruns=[5000,5000, 5000,6000,20000,80000,300000], steady=[100,350,1000,3700,15500, 60000])
 #b=Results(L=[8,16,32,64,128,256], nruns=[5000,5000, 6000,7000,20000,80000], steady=[100,350,1000,3700,15500, 60000])
-"""        
-a=Oslo(8,(1,2),0.5,65000)
-results1 = a.heights
-legend1= ("L=8")
-rs1=np.mean(results1[200:])
-pos1 = np.where(results1>rs1)
-print(rs1, pos1[0][0])
-a=Oslo(16,(1,2),0.5,65000)
-results2 = a.heights
-legend2= "L=16"
-rs2=np.mean(results2[300:])
-pos2 = np.where(results2>rs2)
-print(rs2, pos2[0][0])
-a=Oslo(32,(1,2),0.5,65000)
-results3 = a.heights
-legend3= "L=32"
-rs3=np.mean(results3[1000:])
-pos3 = np.where(results3>rs3)
-print(rs3, pos3[0][0])
-a=Oslo(64,(1,2),0.5,65000)
-results4 = a.heights
-legend4= "L=64"
-rs4=np.mean(results4[4000:])
-pos4 = np.where(results4>rs4)
-print(rs4, pos4[0][0])
-a=Oslo(128,(1,2),0.5,65000)
-results5 = a.heights
-legend5= "L=128"
-rs5=np.mean(results5[40000:])
-pos5 = np.where(results5>rs5)
-print(rs5, pos5[0][0])
-a=Oslo(256,(1,2),0.5,65000)
-results6 = a.heights
-legend6= "L=256"
-rs6=np.mean(results6[58000:])
-pos6 = np.where(results6>rs6)
-print(rs6, pos6[0][0])
-scale = list(range(0, 65001))
-plot1 = plt.plot(scale, results1, label = legend1)
-plot2 = plt.plot(scale, results2, label = legend2)
-plot3 = plt.plot(scale, results3, label = legend3 )
-plot4 = plt.plot(scale, results4, label = legend4)
-plot5 = plt.plot(scale, results5, label = legend5)
-plot6 = plt.plot(scale, results6, label = legend6)
-plt.xlabel("Grains added")
-plt.ylabel("Height of the system")
-plt.legend(loc = 'upper left')
-#plt.figlegend((plot1, plot2, plot3, plot4),(legend1,legend2,legend3,legend4), 'upper right')
-plt.axhline(y=rs1)
-plt.axhline(y=rs2)
-plt.axhline(y=rs3)
-plt.axhline(y=rs4)
-plt.axhline(y=rs5)
-plt.axhline(y=rs5)
-plt.axhline(y=rs6)
-plt.axvline(x=pos1[0][0])
-plt.axvline(x=pos2[0][0])
-plt.axvline(x=pos3[0][0])
-plt.axvline(x=pos4[0][0])
-plt.axvline(x=pos5[0][0])
-plt.axvline(x=pos6[0][0])
-"""
