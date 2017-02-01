@@ -93,18 +93,27 @@ class Oslo:
            
          
                 
-    """                
-    def heights(self):
+                    
+    def moveheights(self):
         
         # This method calculates the heights from the value of self.firsth and the self.z        
+        self.W= 25
         
-        helpH=self.firsth
-        i = 0
-        for value in self.z:
-            self.height[i] = helpH            
-            helpH -=self.z[i]            
-            i+=1"""
+        leng = len(self.heights)-self.W
+        i = 25
+        self.moh=np.zeros((1,leng))
+        while i< (leng):
+            self.moh[0][i] = (np.mean(self.heights[i-self.W:i+self.W+1]))
             
+            i+=1     
+
+    def task2c(self, t0=50, T=len(a.heights)-1):
+        self.averageh = np.sum(self.heights[t0+1:t0+T+1])/T
+        squares = [x**2 for x in self.heights[t0+1:t0+T+1]]
+        self.sqaverageh = (np.sum(squares))/T
+        self.sigma = np.sqrt(self.sqaverageh-self.averageh**2) 
+        print(self.averageh, self.sqaverageh, T, self.sigma)
+                    
 
     def avalancheplot(self):
         length = len(self.s)+1
@@ -128,12 +137,13 @@ class Oslo:
             self.drive()
             self.relaxation()
             self.run+=1
-
-        #self.heighplot()    
+        #self.task2c()
+        self.moveheights()    
         #self.heights()
         #self.avalancheplot()
         
-
+#a = Oslo(16,(1,2), 0.5,500 )
+        
 
 class Results:
     def __init__(self, L=[], nruns=[], steady=[]):
@@ -143,24 +153,102 @@ class Results:
         self.difruns = len(self.L)
         self.results = np.array([0.0]*self.difruns)
         
+        self.call2b()
+        
         
     
     
     def call2(self):
+        """This is used to call for task 2a"""
         i=0
         while(i<self.difruns):
-            a.Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
+            a = Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
             res1=a.heights
-            legend1=("L= %i", self.L[i])
+            legend1=("L= %i" %self.L[i])
             rs1=np.mean(res1[self.steady[i]:])
             pos1 = np.where(res1>rs1)
-            print(rs1, pos1[0][0])
+            print(self.L[i],rs1, pos1[0][0])
             scale = list(range(0,self.nruns[i]+1))
             plt.plot(scale, res1, label=legend1)
+            plt.axhline(y=rs1)
+            plt.axvline(x=pos1[0][0])
+           # print("L = %i, htres=%i, at ttres=%i", %(self.L[i],rs1, pos1 ))
+            i+=1
+            
+        plt.xlabel("Grains added")
+        plt.ylabel("Height of the system")
+        plt.legend(loc = 'upper left')
+        plt.show()
+        
+    def call2b(self):
+        """This is used to call for task 2b
+        Implementing data collaps"""
+        i=0
+        plt.figure(1)
+        plt.title("Data collapse for moving average")
+        while(i<self.difruns):
+            a = Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
+            l = self.L[i]
+            res1=[a.moh[0]/l]            
+            legend1=("L= %i" %self.L[i])
+            scale = list(range(0,len(res1[0])))
+            scale = [x /(l**2) for x in scale]
+            print(np.shape(res1[0]), np.shape(scale))
+            
+            plt.plot(np.log10(scale), np.log10(res1[0]), label=legend1)
+
+            i+=1
+            
+        plt.xlabel("log(t(grains)/(L**2))")
+        plt.ylabel("log(Moving average/L)")
+        plt.legend(loc = 'lower right')
+        plt.show()
+        
+    def call2c(self):
+        i=0
+        
+        while(i<self.difruns):
+            
+            a = Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
+            
+            l = self.L[i]
+            t0 = self.steady[i]
+            
+             
+            steadyheights = a.heights[t0+1:]
+            T = len(steadyheights)
+            self.averageh = np.sum(steadyheights)/T
+            #squares = [x**2 for x in self.heights[t0+1:t0+T+1]]
+            #self.sqaverageh = (np.sum(squares))/T
+            #self.sigma = np.sqrt(self.sqaverageh-self.averageh**2) 
+            self.sigma2 = np.std(steadyheights)
+            self.unique = list(set(steadyheights))
+            self.probabilities = np.zeros((len(self.unique),2))
+            j=0
+            self.sum=0
+            for height in self.unique:
+                self.probabilities[i][0]= height
+                self.probabilities[i][1] = steadyheights.count(height)/len(steadyheights)
+                self.sum += steadyheights.count(height)/len(steadyheights)
+                j+=1
+            print("L, average height, std, number of points used,  check normalization")
+            print(l, self.averageh,  self.sigma2, T, self.sum)
             
             i+=1
+            
+        """
+        self.averageh = np.sum(self.heights[t0+1:t0+T+1])/T
+        squares = [x**2 for x in self.heights[t0+1:t0+T+1]]
+        self.sqaverageh = (np.sum(squares))/T
+        self.sigma = np.sqrt(self.sqaverageh-self.averageh**2) 
+        print(self.averageh, self.sqaverageh, T, self.sigma)"""
         
         
+#b=Results(L=[16], nruns=[5000], steady=[350])  
+#b=Results(L=[8,16,32,64], nruns=[5000,5000, 5000,6000], steady=[200,300,1000]) 
+b=Results(L=[8,16,32,64,128,256,512], nruns=[5000,5000, 5000,6000,20000,80000,300000], steady=[100,350,1000,3700,15500, 60000])
+#b=Results(L=[8,16,32,64,128,256], nruns=[5000,5000, 6000,7000,20000,80000], steady=[100,350,1000,3700,15500, 60000])
+"""        
 a=Oslo(8,(1,2),0.5,65000)
 results1 = a.heights
 legend1= ("L=8")
@@ -231,7 +319,4 @@ plt.axvline(x=pos3[0][0])
 plt.axvline(x=pos4[0][0])
 plt.axvline(x=pos5[0][0])
 plt.axvline(x=pos6[0][0])
-
-
-
-plt.show()
+"""
