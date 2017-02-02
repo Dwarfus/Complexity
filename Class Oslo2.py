@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed Jan 18 10:05:38 2017
@@ -7,6 +8,7 @@ CN project
 # 2,4,8,16,32,64,128,256,512,1024,2048,4096
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 class Oslo:
     def __init__(self, L=256, treshold = (1,2), prob=0.5, nruns = 50):
@@ -33,7 +35,7 @@ class Oslo:
             
     def drive(self):
         """
-        THis method is the drive algorithm. E.g. it adds one point to z0
+        This method is the drive algorithm. E.g. it adds one point to z0
         """
         self.z[0]+=1
         self.firsth +=1
@@ -85,31 +87,6 @@ class Oslo:
           
          
                 
-                    
-    def moveheights(self):
-        
-        # This method calculates the heights from the value of self.firsth and the self.z        
-        self.W= 50
-        
-        leng = len(self.heights)-self.W
-        i = self.W
-        self.moh=np.zeros((1,leng))
-        while i< (leng):
-            self.moh[0][i] = (np.mean(self.heights[i-self.W:i+self.W+1]))
-            
-            i+=1     
-
-    """
-    def task2c(self, t0=50, T=len(a.heights)-1):
-        self.averageh = np.sum(self.heights[t0+1:t0+T+1])/T
-        squares = [x**2 for x in self.heights[t0+1:t0+T+1]]
-        self.sqaverageh = (np.sum(squares))/T
-        self.sigma = np.sqrt(self.sqaverageh-self.averageh**2) 
-        print(self.averageh, self.sqaverageh, T, self.sigma)"""
-                    
-
-
-        
 
         
         
@@ -120,13 +97,10 @@ class Oslo:
             self.drive()
             self.relaxation()
             self.run+=1
-        #self.task2c()
-        #self.moveheights()    
-        #self.heights()
-        #self.avalancheplot()
         
 #a = Oslo(16,(1,2), 0.5,500 )
-        
+def func( L,a,c,w):
+    return a+c*(L**(-w))        
 
 class Results:
     def __init__(self, L=[], nruns=[], steady=[]):
@@ -140,7 +114,7 @@ class Results:
         self.difruns = len(self.L)
         self.results = np.array([0.0]*self.difruns)
         
-        self.call2b()
+        self.call2c()
         
         
     
@@ -216,25 +190,24 @@ class Results:
         
         
         
-    def function( L,a,c,w ):
-        return a+c(L**(-w))
+
 
     def call2c(self):
         i=0
         print("L, average height, std, number of points used,  check normalization")
         self.averages = []
         self.sigmas= []
+        self.probfinal=[]
         while(i<self.difruns):
             
             a = Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
             
             l = self.L[i]
             t0 = self.steady[i]
-            
              
             self.steadyheights = a.heights[t0+1:]
-            T = len(self.steadyheights)
-            self.averageh = float(np.sum(self.steadyheights)/float(T))
+            T = float(len(self.steadyheights))
+            self.averageh = float(np.mean(self.steadyheights))
             #squares = [x**2 for x in self.heights[t0+1:t0+T+1]]
             #self.sqaverageh = (np.sum(squares))/T
             #self.sigma = np.sqrt(self.sqaverageh-self.averageh**2) 
@@ -245,34 +218,66 @@ class Results:
             self.sum=0
             for height in self.unique:
                 self.probabilities[j][0] = height
-                self.probabilities[j][1] = self.steadyheights.count(height)/len(self.steadyheights)
-                self.sum += self.steadyheights.count(height)/len(self.steadyheights)
+                self.probabilities[j][1] = float(self.steadyheights.count(height)/T)
+                self.sum += self.steadyheights.count(height)/T
                 j+=1
             
             print(l, self.averageh,  self.sigma2, T, self.sum)
+            self.probfinal.append(self.probabilities[0])
             self.averages.append(self.averageh/l)
             self.sigmas.append(self.sigma2)
             
             i+=1
+        """
+        plt.figure(1)
+        plt.plot(self.L, self.averages, 'ro', label="Task 2c")
         
-        plt.figure(2)
-        plt.plot(np.log10(self.L), np.log10(self.averages), label="Task 2c")
-        
-        plt.xlabel("log(L)")
-        plt.ylabel("log(<h>/l)")
+        plt.xlabel("L")
+        plt.ylabel("<h>/L ")
         plt.legend(loc=0)
-        plt.show()
+        plt.show()"""
         
         """
-        self.averageh = np.sum(self.heights[t0+1:t0+T+1])/T
-        squares = [x**2 for x in self.heights[t0+1:t0+T+1]]
-        self.sqaverageh = (np.sum(squares))/T
-        self.sigma = np.sqrt(self.sqaverageh-self.averageh**2) 
-        print(self.averageh, self.sqaverageh, T, self.sigma)"""
+        plt.figure(3)
+        plt.plot(self.L, self.sigmas, 'ro', label="Sigma values")
+        
+        plt.xlabel("L")
+        plt.ylabel("Sigma ")
+        plt.legend(loc=0)
+        plt.show()"""
+        
+        
+        self.popt, self.pcov= curve_fit(func, self.L, self.averages, p0=[1.7,-0.5,0.5])
+        self.perr = np.sqrt(np.diag(self.pcov))
+        #print(self.popt,self.perr)
+        
+        plt.figure(2)        
+        self.avalues = np.linspace(1.7,1.8,21 )
+        plt.title("Plots for different a0")
+        self.res = []
+        self.residual=[]
+        for value in self.avalues:
+            plt.loglog( self.L,abs(self.averages-value), label=value)
+            fit = np.polyfit( np.log10(self.L),np.log10(abs(self.averages-value)), deg=1, full=True)
+            self.res.append(fit[0])
+            self.residual.append(fit[1])
+         
+        minres= np.argmin(self.residual)
+        
+        print(self.res[minres], self.avalues[minres]) 
+        plt.xlabel("Log10(L)")
+        plt.ylabel("Log10(|h/L-a|)")
+        plt.legend(loc= 0)
+        plt.show()
+            
+        
+        
+        
+
         
 
 #tresholds in time are[54,226,898,3391,14056,56437]        
-b=Results(L=[32], nruns=[6000], steady=[900])  
-#b=Results(L=[8,16,32,64,128], nruns=[5100,5300, 5900,8400,20000], steady=[100,300,900, 3400,15000]) 
+#b=Results(L=[16], nruns=[5400], steady=[400])  
+b=Results(L=[8,16,32,64,128], nruns=[5100,5300, 5900,8400,20000], steady=[100,300,900, 3400,15000]) 
 #b=Results(L=[8,16,32,64,128,256,512], nruns=[5000,5000, 5000,6000,20000,80000,300000], steady=[100,350,1000,3700,15500, 60000])
-#b=Results(L=[8,16,32,64,128,256], nruns=[5000,5000, 6000,7000,20000,80000], steady=[100,350,1000,3700,15500, 60000])
+#b=Results(L=[8,16,32,64,128,256], nruns=[5100,5350, 6000,8600,20000,65000], steady=[100,350,1000,3600,15000, 60000])
