@@ -8,6 +8,7 @@ CN project
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from log_bin_CN_2016 import log_bin
 
 class Oslo:
     def __init__(self, L=256, treshold = (1,2), prob=0.5, nruns = 50):
