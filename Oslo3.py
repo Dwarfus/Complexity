@@ -301,8 +301,14 @@ class Results:
         
     def call3a(self):
         """
-        This is the function for task 3a        
+        This is the function for task 3a and also for 3b if the plot of normal prob is commented out
+        This function is ready for use, just need to run it according to the script... Will probably take overnight
         """
+        plt.figure(6)
+        plt.title("Avalanche size probability")
+        plt.xlabel("Avalanche size")
+        plt.ylabel("Probability")
+        
         i=0
         while(i<self.difruns):
             print("started")
@@ -318,23 +324,68 @@ class Results:
                 
             print(np.sum(self.probs))
             
-            plt.figure(6)
-            plt.title("Avalanche size probability")
-            plt.loglog(unique, self.probs, 'ro')
-            plt.show()
-            #l = self.L[i]
-            #t0 = self.steady[i]
+
+            # For 3b just comment out the line below to omit the normal Probs and set different runs parameters            
+            plt.loglog(unique, self.probs, 'ro', label=len(self.avalanches))
+           
+            d, c = log_bin(self.avalanches, 1., 1.5, 1.50, 'integer', debug_mode=True)
+            plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.5))
+            #d, c = log_bin(self.avalanches, 1., 1.5, 1.75, 'integer', debug_mode=True)
+            #plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.75))
+            
+            #d, c = log_bin(self.avalanches, 1., 1.5, 1.85, 'integer', debug_mode=True)
+            #plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.85))
+            #d, c = log_bin(self.avalanches, 1., 1.5, 2.0, 'integer', debug_mode=True)
+            #plt.loglog(d, c, label=(len(self.avalanches), "Log binned",2.0))
+            
              
-            #self.steadyheights = a.heights[t0+1:] 
             i+=1
         
+        plt.legend()
+        plt.show() 
         
         
+    def call3c(self):
+        """
+        Redo for 3c, so far copied 3a/b        
+        
+        This method is for task 3b. Main difference from 3a is that it only plots the log binned data.
+        When setting up the parameters make sure that all have the same steady state number of runs N that is large enough
+        """
+        plt.figure(7)
+        plt.title("Avalanche size probability")
+        plt.xlabel("Avalanche size")
+        plt.ylabel("Probability")
+        
+        i=0
+        while(i<self.difruns):
 
+            a = Oslo(self.L[i],(1,2), 0.5,self.nruns[i] )
+            t0=self.steady[i]
+            self.avalanches = a.s[t0:]
+            unique = list(set(self.avalanches))
+            unique.sort()
+            total = float(len(self.avalanches))
+            self.probs = []
+            for value in unique:
+                self.probs.append(float(self.avalanches.count(value))/total)
+                
+            print(np.sum(self.probs))
+                        
+            #plt.loglog(unique, self.probs, 'ro', label=len(self.avalanches))
+            d, c = log_bin(self.avalanches, 1., 1.5, 1.5, 'integer', debug_mode=True)
+            plt.loglog(d, c, 'r-', label=(len(self.avalanches)))
+             
+            i+=1
+        
+        plt.legend()
+        plt.show() 
+        
         
 
 #tresholds in time are[54,226,898,3391,14056,56437,225745...]    
-b=Results(L=[128.], nruns=[25000], steady=[15000])    
+b=Results(L=[128.], nruns=[25000], steady=[15000])   
+#b=Results(L=[256., 256., 256], nruns=[70000,160000, 1060000], steady=[60000,60000,60000]) # 3a 
 #b=Results(L=[16], nruns=[5300], steady=[300])  
 #b=Results(L=[8.,16.,32.,64.], nruns=[5100,5300, 5900,8400], steady=[100,300,900, 3400]) 
 #b=Results(L=[8,16,32,64,128], nruns=[5100,5300, 5900,8400,20000], steady=[100,300,900, 3400,15000]) 
