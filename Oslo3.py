@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from log_bin_CN_2016 import log_bin
+import pickle
 
 class Oslo:
     def __init__(self, L=256, treshold = (1,2), prob=0.5, nruns = 50):
@@ -98,7 +99,15 @@ class Oslo:
             self.relaxation()
             self.run+=1
         
-#a = Oslo(16,(1,2), 0.5,500 )
+#a = Oslo(8,(1,2), 0.5,1 000 100 ) # as threshold is definitely under 100 and I want million runs after it
+        
+#  Test this first
+#with open('L8.pkl', 'wb') as output:    
+#    pickle.dump(a, output, pickle.HIGHEST_PROTOCOL) 
+        
+#np.save(outfilename, array)
+#np.load()
+        
 def func( L,a,c,w):
     return a+c*(L**(-w))        
 
@@ -327,9 +336,9 @@ class Results:
 
             # For 3b just comment out the line below to omit the normal Probs and set different runs parameters            
             plt.loglog(unique, self.probs, 'ro', label=len(self.avalanches))
-           
-            d, c = log_bin(self.avalanches, 1., 1.5, 1.50, 'integer', debug_mode=True)
-            plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.5))
+            print("Logbin start")
+            d, c = log_bin(self.avalanches, 1., 1.5, 1.75, 'integer', debug_mode=True)
+            plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.75))
             #d, c = log_bin(self.avalanches, 1., 1.5, 1.75, 'integer', debug_mode=True)
             #plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.75))
             
@@ -373,19 +382,19 @@ class Results:
             print(np.sum(self.probs))
                         
             #plt.loglog(unique, self.probs, 'ro', label=len(self.avalanches))
-            d, c = log_bin(self.avalanches, 1., 1.5, 1.5, 'integer', debug_mode=True)
-            plt.loglog(d, c, 'r-', label=(len(self.avalanches)))
+            centres, counts = log_bin(self.avalanches, 1., 1.5, 1.5, 'integer', debug_mode=True)
+            plt.loglog(centres, counts, 'r-', label=(len(self.avalanches)))
              
             i+=1
         
         plt.legend()
         plt.show() 
-        
+        return None
         
 
 #tresholds in time are[54,226,898,3391,14056,56437,225745...]    
-b=Results(L=[128.], nruns=[25000], steady=[15000])   
-#b=Results(L=[256., 256., 256], nruns=[70000,160000, 1060000], steady=[60000,60000,60000]) # 3a 
+#b=Results(L=[128.], nruns=[25000], steady=[15000])   
+b=Results(L=[256., 256., 256], nruns=[70000,160000, 1060000], steady=[60000,60000,60000]) # 3a 
 #b=Results(L=[16], nruns=[5300], steady=[300])  
 #b=Results(L=[8.,16.,32.,64.], nruns=[5100,5300, 5900,8400], steady=[100,300,900, 3400]) 
 #b=Results(L=[8,16,32,64,128], nruns=[5100,5300, 5900,8400,20000], steady=[100,300,900, 3400,15000]) 
