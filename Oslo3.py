@@ -105,7 +105,7 @@ class Oslo:
 #with open('L8.pkl', 'wb') as output:    
 #    pickle.dump(a, output, pickle.HIGHEST_PROTOCOL) 
         
-#np.save(outfilename, array)
+#np.save('outfilename', array)
 #np.load()
         
 def func( L,a,c,w):
@@ -335,7 +335,7 @@ class Results:
             
 
             # For 3b just comment out the line below to omit the normal Probs and set different runs parameters            
-            plt.loglog(unique, self.probs, 'ro', label=len(self.avalanches))
+            plt.loglog(unique, self.probs, 'o', label=len(self.avalanches))
             print("Logbin start")
             d, c = log_bin(self.avalanches, 1., 1.5, 1.75, 'integer', debug_mode=True)
             plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.75))
