@@ -21,12 +21,14 @@ class Oslo:
         self.nruns = nruns # This is the number of times the code should run
         self.s = [] # avalanche size for each grain added
         self.counter = 0 # used to measure the time in units of total grains added. 
+        self.drop =[]
         self.lost = 0 # The count of grains leaving the system
         self.steady = 0 # check whether we are in steady state, this might not be needed after while
         self.treshold = treshold # The values of possible treshold slopes
         self.L = L # The size of the system
         self.p = prob # The probability of the first treshold
         self.avalanche = 0 # the counter of size of avalanches for one grain added
+        
         i=0
         while (i<self.L):
             # this sets the initial treshold values
@@ -83,7 +85,9 @@ class Oslo:
             else:
             
                 self.s.append(self.avalanche)
+                self.drop.append(self.lost)
                 self.heights.append(self.firsth)
+                self.lost = 0
                 self.relax = 0
           
          
@@ -97,13 +101,21 @@ class Oslo:
         while self.run<self.nruns:     
             self.drive()
             self.relaxation()
+            if self.run % 100000==0:
+                print(self.run)
+        
             self.run+=1
-        
-#a = Oslo(8,(1,2), 0.5,1 000 100 ) # as threshold is definitely under 100 and I want million runs after it
-        
+  #tresholds in time are[54,226,898,3391,14056,56437,225745...]          
+#a = Oslo(256,(1,2), 0.5,1060000 ) # as threshold is definitely under 100 and I want million runs after it
+a = Oslo(1024,(1,2), 0.5,2050000 )        
 #  Test this first
 #with open('L8.pkl', 'wb') as output:    
 #    pickle.dump(a, output, pickle.HIGHEST_PROTOCOL) 
+    
+#with open('company_data.pkl', 'rb') as input:
+#    company1 = pickle.load(input)
+#            
+        
         
 #np.save('outfilename', array)
 #np.load()
@@ -394,7 +406,7 @@ class Results:
 
 #tresholds in time are[54,226,898,3391,14056,56437,225745...]    
 #b=Results(L=[128.], nruns=[25000], steady=[15000])   
-b=Results(L=[256., 256., 256], nruns=[70000,160000, 1060000], steady=[60000,60000,60000]) # 3a 
+#b=Results(L=[256., 256., 256], nruns=[70000,160000, 1060000], steady=[60000,60000,60000]) # 3a 
 #b=Results(L=[16], nruns=[5300], steady=[300])  
 #b=Results(L=[8.,16.,32.,64.], nruns=[5100,5300, 5900,8400], steady=[100,300,900, 3400]) 
 #b=Results(L=[8,16,32,64,128], nruns=[5100,5300, 5900,8400,20000], steady=[100,300,900, 3400,15000]) 
