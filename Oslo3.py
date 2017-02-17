@@ -8,7 +8,7 @@ CN project
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from log_bin_CN_2016 import log_bin
+#from log_bin_CN_2016 import log_bin
 import pickle
 
 class Oslo:
@@ -21,14 +21,13 @@ class Oslo:
         self.nruns = nruns # This is the number of times the code should run
         self.s = [] # avalanche size for each grain added
         self.counter = 0 # used to measure the time in units of total grains added. 
-        self.drop =[]
         self.lost = 0 # The count of grains leaving the system
+        self.drop = []
         self.steady = 0 # check whether we are in steady state, this might not be needed after while
         self.treshold = treshold # The values of possible treshold slopes
         self.L = L # The size of the system
         self.p = prob # The probability of the first treshold
         self.avalanche = 0 # the counter of size of avalanches for one grain added
-        
         i=0
         while (i<self.L):
             # this sets the initial treshold values
@@ -87,8 +86,8 @@ class Oslo:
                 self.s.append(self.avalanche)
                 self.drop.append(self.lost)
                 self.heights.append(self.firsth)
-                self.lost = 0
                 self.relax = 0
+                self.lost = 0
           
          
                 
@@ -101,21 +100,16 @@ class Oslo:
         while self.run<self.nruns:     
             self.drive()
             self.relaxation()
-            if self.run % 100000==0:
-                print(self.run)
-        
             self.run+=1
-  #tresholds in time are[54,226,898,3391,14056,56437,225745...]          
-#a = Oslo(256,(1,2), 0.5,1060000 ) # as threshold is definitely under 100 and I want million runs after it
-a = Oslo(1024,(1,2), 0.5,2050000 )        
+        
+#a = Oslo(8,(1,2), 0.5,1000 ) # as threshold is definitely under 100 and I want million runs after it
+        
 #  Test this first
 #with open('L8.pkl', 'wb') as output:    
 #    pickle.dump(a, output, pickle.HIGHEST_PROTOCOL) 
-    
-#with open('company_data.pkl', 'rb') as input:
-#    company1 = pickle.load(input)
-#            
         
+#with open('company_data.pkl', 'rb') as input:
+    #company1 = pickle.load(input)
         
 #np.save('outfilename', array)
 #np.load()
@@ -123,6 +117,239 @@ a = Oslo(1024,(1,2), 0.5,2050000 )
 def func( L,a,c,w):
     return a+c*(L**(-w))        
 
+#['L8','L16','L32','L64','L128','L256','L512']
+class Analysis:
+    def __init__(self, data=['8','16','32','64','128','256','512']): 
+            """
+            Loads the data from pickled objects.
+            The objects contain:
+                heights as .heights
+                avalanche sizes as .s
+                drop sizes as .drop
+            The data was collected so that the last 10^6 is always the steady state
+            e.g. from previous knowledge of tc the number of grains added was picked 
+            so that we can use last 10^6 values as steady state for all systems.
+            """           
+            self.objects = [] 
+            self.data = data
+            self.L = [float(x) for x in data]
+            for value in data:
+                with open('L'+value+'.pkl', 'rb') as input:
+                    self.objects.append( pickle.load(input))
+                    
+            #self.task2a()
+            #self.task2b()
+            self.task2c()
+                    
+    def task2a(self):
+        """
+        Plots the height vs t, either as a normal or loglog plot.
+        Also can plot the lines of the steady state height and the t at which
+        this height was reached for the first time.        
+        """
+        
+        i=0
+        plt.figure(1)
+        plt.title("Height as a function of time")    
+        #plt.title("Log plot of h(t)")
+        for obj in self.objects:
+            height = obj.heights
+            
+            legend1=('L='+self.data[i])
+            # find average height of recurrent state
+            # The data was collected so that at least last 10^6 points are steady states
+            rs=np.mean(height[-1000000:])
+            pos1 = np.where(height>rs)
+            print(self.data[i],rs, pos1[0][0])
+            scale = list(range(0,len(height)))
+            plt.plot(scale, height, label=legend1)
+            #plt.loglog(scale, height, label=legend1)
+            
+            #plt.axhline(y=rs) # the average height line
+            #plt.axvline(x=pos1[0][0]) # the steady state reached
+            plt.grid()
+
+            i+=1
+        self.lastpos = pos1[0][0]    
+        plt.xlabel("t")
+        plt.ylabel("h(t,L)")
+        plt.legend(loc = 0)
+        plt.show()
+        
+    def task2b(self):
+        """
+        The data collapse for moving average.
+        Plots h/L vs t/L^2 which results in power low
+        The moving average is calculated from t to t+2w, so for j=0 it 
+        effectively calculates the moving average around t+w.
+        the x axis is calculated appropriately as it starts at w
+        """
+        i=0
+        self.w=25
+        plt.figure(2)
+        plt.title("Data collapse for moving average")
+        for obj in self.objects:
+            
+            l = float(self.data[i])
+            height= obj.heights
+            j = 25
+            leng = len(height)-2*self.w
+            self.moh = np.zeros(( leng))
+            #calculates the values of htylda
+            while j<(leng):
+                # h is here scaled by L to get data collapse
+                self.moh[j]= float(np.mean(height[j:j+2*self.w+1])/l)
+                j+=1
+                
+                
+            legend1=('L='+self.data[i])
+            self.scale1 = list(range(self.w,leng+self.w))                        
+            # data collapse of the time
+            self.scale = [float(x/(l**2)) for x in self.scale1]   
+            
+            plt.loglog(self.scale, self.moh,  label=legend1)
+
+            i+=1
+        # Now for the highest L I will calculate the gradient
+        
+        # If running only 2b for L = 512 as highest L uncomment the line below        
+        self.lastpos= 225396   
+        # Below it calculates the slope from a certain interval on the transient line
+        self.scafit= self.scale[int(self.lastpos*0.2):int(self.lastpos*0.9)]
+        self.p = np.polyfit(np.log10(self.scafit),np.log10(self.moh[int(self.lastpos*0.2):int(self.lastpos*0.9)]),deg=1 )
+        print("The power law coeff. is: %s" %self.p)
+        # Plotting the linear fit - in most plots it is not visible, so no need to plot it anyway.
+        # It served as good check that the fit is correct, if wanted, uncomment the two lines below.
+        #self.values =[ z**self.p[0]*10**(self.p[1]) for z in self.scafit]
+        #plt.loglog(self.scafit, self.values)
+        plt.xlabel("t/(L^2)")
+        plt.ylabel("Moving average/L")
+        plt.legend(loc = 0)
+        plt.grid()
+        plt.show()
+        
+                
+
+    def task2c(self):
+        """
+        Also includes 2d                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+        """
+        i=0
+        print("L, average height, std, number of points used,  check normalization, av.slope")
+        self.averages = []
+        self.sigmas= []
+        self.probfinal=[]
+        self.heightfinal = []
+        self.averh=[]
+        for obj in self.objects:
+            
+            
+            l = float(self.data[i])
+            
+             
+            height = obj.heights[-1000000:]
+            T = float(len(height))
+            self.averageh = float(np.mean(height))
+            # It was checked that np.std gives same value as the full expression given in instructions        
+            self.sigma = np.std(height)
+            self.unique = list(set(height))
+            self.probabilities = []
+            self.heights=[]
+            j=0
+            self.sum=0
+            for value in self.unique:
+                self.heights.append( value)
+                self.probabilities.append(float(height.count(value)/T))
+                self.sum += height.count(value)/T
+                
+            
+            print(l, self.averageh,  self.sigma, T, self.sum)
+            self.probfinal.append(self.probabilities)
+            self.heightfinal.append(self.heights)
+            self.averh.append(self.averageh)
+            self.averages.append(self.averageh/l)
+            self.sigmas.append(self.sigma)
+            
+            i+=1
+        
+        plt.figure(3)
+        plt.title("Scaled height vs L")
+        plt.plot(self.L, self.averages, 'o')        
+        plt.xlabel("L")
+        plt.ylabel("<h>/L ")
+        #plt.legend(loc=0)
+        plt.grid()
+        plt.show()
+        
+        
+        plt.figure(4)
+        plt.grid()
+        plt.loglog(self.L, self.sigmas, 'o', label="Sigma values")
+        
+        plt.xlabel("L")
+        plt.ylabel("Sigma")
+        plt.legend(loc=0)
+        plt.show()
+        
+        sig = np.polyfit(np.log10(self.L), np.log10(self.sigmas), deg=1, full=True)
+        print("the sigma fit is is", sig[0], "residuals=", sig[1])
+        
+        # A simple curve fit gives an idea of a0 and omega
+        self.popt, self.pcov= curve_fit(func, self.L, self.averages, p0=[1.7,-0.5,0.5])
+        self.perr = np.sqrt(np.diag(self.pcov))
+        print("a0,a0*a1, omega1 are (with errors)",self.popt,self.perr)
+        
+        #this part includes the different method for evaluating low size corrections                
+        plt.figure(5)
+               
+        self.avalues = np.linspace(1.726,1.76,51 )
+        plt.title("Plots for different a0")
+        self.res = []
+        self.residual=[]
+        for value in self.avalues:
+            plt.loglog( self.L,abs(1-self.averages/value), label=value)
+            fit = np.polyfit( np.log10(self.L),np.log10(1-self.averages/value), deg=1, full=True)
+            self.res.append(fit[0])
+            self.residual.append(fit[1])
+         
+        minres= np.argmin(self.residual)
+        err = (self.avalues[2]-self.avalues[1])/2
+        print("The other method gives -omega, a0, a0 error, residual", self.res[minres][0], self.avalues[minres], err, self.residual[minres]) 
+        plt.xlabel("L")
+        plt.ylabel("1-h/(L*a0)")
+        plt.legend(loc= 0)
+        plt.grid() 
+        plt.show()
+        
+        plt.figure(3)
+        plt.axhline(self.avalues[minres])
+        
+        # This part is the 2d task        
+        j=0
+        plt.figure(6)
+        plt.grid()
+        plt.title("The data collapse of P(h;L)")
+        plt.xlabel("(h-<h>)/sigma")
+        plt.ylabel("P*sigma")
+        while j< len(self.data):
+            
+            scaledh = [(h-self.averh[j])/self.sigmas[j] for h in self.heightfinal[j]]
+            scaledp = [v*self.sigmas[j] for v in self.probfinal[j]]
+            plt.plot(scaledh, scaledp, label = 'L='+ self.data[j])
+            
+            j+=1
+        plt.legend(loc=0)
+        plt.show()
+
+c= Analysis()
+
+
+################################################################################################################
+#################################################################################################################
+#################################################################################################################
+
+
+                
 class Results:
     def __init__(self, L=[], nruns=[], steady=[]):
         """
@@ -349,8 +576,8 @@ class Results:
             # For 3b just comment out the line below to omit the normal Probs and set different runs parameters            
             plt.loglog(unique, self.probs, 'o', label=len(self.avalanches))
             print("Logbin start")
-            d, c = log_bin(self.avalanches, 1., 1.5, 1.75, 'integer', debug_mode=True)
-            plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.75))
+            d, c = log_bin(self.avalanches, 0., 1., 1.5, 'integer', drop_zeros = False, debug_mode=True)
+            plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.5))
             #d, c = log_bin(self.avalanches, 1., 1.5, 1.75, 'integer', debug_mode=True)
             #plt.loglog(d, c, label=(len(self.avalanches), "Log binned",1.75))
             
@@ -394,7 +621,7 @@ class Results:
             print(np.sum(self.probs))
                         
             #plt.loglog(unique, self.probs, 'ro', label=len(self.avalanches))
-            centres, counts = log_bin(self.avalanches, 1., 1.5, 1.5, 'integer', debug_mode=True)
+            centres, counts = log_bin(self.avalanches, 0., 1., 1.5, 'integer', drop_zeros = False, debug_mode=True)
             plt.loglog(centres, counts, 'r-', label=(len(self.avalanches)))
              
             i+=1
@@ -408,7 +635,3 @@ class Results:
 #b=Results(L=[128.], nruns=[25000], steady=[15000])   
 #b=Results(L=[256., 256., 256], nruns=[70000,160000, 1060000], steady=[60000,60000,60000]) # 3a 
 #b=Results(L=[16], nruns=[5300], steady=[300])  
-#b=Results(L=[8.,16.,32.,64.], nruns=[5100,5300, 5900,8400], steady=[100,300,900, 3400]) 
-#b=Results(L=[8,16,32,64,128], nruns=[5100,5300, 5900,8400,20000], steady=[100,300,900, 3400,15000]) 
-#b=Results(L=[8,16,32,64,128,256,512], nruns=[5600,5250, 6000,8500,20000,65000,235000], steady=[100,250,1000,3500,15000, 60000,230000])
-#b=Results(L=[8,16,32,64,128,256], nruns=[5100,5350, 6000,8600,20000,65000], steady=[100,350,1000,3600,15000, 60000])
